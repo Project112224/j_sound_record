@@ -9,7 +9,8 @@ public class JSoundRecordPlugin: NSObject, FlutterPlugin, AVAudioRecorderDelegat
   var hasPermission = false
   var audioRecorder: AVAudioRecorder?
   var path: String?
-  var maxAmplitude:Float = -160.0;
+  var maxAmplitude:Float = -160.0
+  var isWav: Bool = false
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "j_sound_record", binaryMessenger: registrar.messenger())
@@ -18,48 +19,51 @@ public class JSoundRecordPlugin: NSObject, FlutterPlugin, AVAudioRecorderDelegat
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    switch call.method {
+      switch call.method {
       case "start":
-        let args = call.arguments as! [String : Any]
-        path = args["path"] as? String
-
-        if path == nil {
-          let directory = NSTemporaryDirectory()
-          let fileName = UUID().uuidString + ".m4a"
-            path = NSURL.fileURL(withPathComponents: [directory, fileName])?.absoluteString
-        }
-
-        start(
-          path: path!,
-          encoder: args["encoder"] as? Int ?? 0,
-          bitRate: args["bitRate"] as? Int ?? 128000,
-          samplingRate: args["samplingRate"] as? Float ?? 44100.0,
-          result: result);
-        break
+          let args = call.arguments as! [String : Any]
+          path = args["path"] as? String
+          let encoder = args["encoder"] as? Int ?? 0
+          let fileNameExtension = isWav ? ".wav" : ".m4a"
+          isWav = encoder == 6
+          if path == nil {
+              let directory = NSTemporaryDirectory()
+              let fileName = "\(UUID().uuidString)\(fileNameExtension)"
+              path = NSURL.fileURL(withPathComponents: [directory, fileName])?.absoluteString
+          }
+          
+          start(
+            path: path!,
+            encoder: encoder,
+            bitRate: args["bitRate"] as? Int ?? 128000,
+            samplingRate: args["samplingRate"] as? Float ?? 44100.0,
+            result: result);
+          break
       case "stop":
-        stop(result)
-        break
+          stop(result)
+          break
       case "pause":
-        pause(result)
+          pause(result)
       case "resume":
-        resume(result)
+          resume(result)
       case "isPaused":
-        result(isPaused)
+          result(isPaused)
       case "isRecording":
-        result(isRecording)
-        break
+          result(isRecording)
+          break
       case "hasPermission":
-        hasPermission(result)
-        break
+          hasPermission(result)
+          break
       case "getAmplitude":
-        getAmplitude(result)
-        break
+          getAmplitude(result)
+          break
       case "dispose":
-        dispose(result)
-        break
+          dispose(result)
+          break
       default:
-        result(FlutterMethodNotImplemented)
-        break
+          result(FlutterMethodNotImplemented)
+          break
+      }
   }
 
 
@@ -96,13 +100,24 @@ public class JSoundRecordPlugin: NSObject, FlutterPlugin, AVAudioRecorderDelegat
   fileprivate func start(path: String, encoder: Int, bitRate: Int, samplingRate: Float, result: @escaping FlutterResult) {
     stopRecording()
 
-    let settings = [
+    var settings = [
       AVFormatIDKey: getEncoder(encoder),
       AVEncoderBitRateKey: bitRate,
       AVSampleRateKey: samplingRate,
       AVNumberOfChannelsKey: 2,
       AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
     ] as [String : Any]
+
+    if (isWav) {
+        settings = [
+            AVFormatIDKey: kAudioFormatLinearPCM,  // PCM WAV
+                AVSampleRateKey: 16000,
+                AVNumberOfChannelsKey: 1,
+                AVLinearPCMBitDepthKey: 16,
+                AVLinearPCMIsBigEndianKey: false,
+                AVLinearPCMIsFloatKey: false
+        ] as [String : Any]
+    }
 
     let options: AVAudioSession.CategoryOptions = [.defaultToSpeaker, .allowBluetooth]
 
