@@ -13,7 +13,9 @@ class MethodChannelJSoundRecord extends JSoundRecordPlatform {
 
   @override
   Future<bool> hasPermission() async {
-    final bool? result = await methodChannel.invokeMethod<bool>('hasPermission');
+    final bool? result = await methodChannel.invokeMethod<bool>(
+      'hasPermission',
+    );
     return result ?? false;
   }
 
@@ -42,33 +44,23 @@ class MethodChannelJSoundRecord extends JSoundRecordPlatform {
     await methodChannel.invokeMethod('dispose');
   }
 
+  // Wav not work
   @override
-  Future<Amplitude> getAmplitude() {
-    // TODO: implement getAmplitude
-    throw UnimplementedError();
-  }
+  Future<Amplitude> getAmplitude() async =>
+      await methodChannel.invokeMethod('getAmplitude');
+
+  // Wav not work
+  @override
+  Future<bool> isPaused() async => await methodChannel.invokeMethod('pause');
 
   @override
-  Future<bool> isPaused() {
-    // TODO: implement isPaused
-    throw UnimplementedError();
-  }
+  Future<bool> isRecording() async =>
+      await methodChannel.invokeMethod('isRecording');
+
+  // Wav not work
+  @override
+  Future<void> pause() async => await methodChannel.invokeMethod('isPaused');
 
   @override
-  Future<bool> isRecording() {
-    // TODO: implement isRecording
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> pause() {
-    // TODO: implement pause
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> resume() {
-    // TODO: implement resume
-    throw UnimplementedError();
-  }
+  Future<void> resume() async => await methodChannel.invokeMethod('resume');
 }
